@@ -1,65 +1,123 @@
-import Image from "next/image";
+import Link from "next/link";
+import { INDICATORS } from "@/lib/registry/indicators";
+import type { Indicator } from "@/lib/registry/indicators";
 
-export default function Home() {
+// ── Topic ordering ────────────────────────────────────────────────────────────
+const TOPIC_ORDER = [
+  "Health",
+  "Education",
+  "Economy",
+  "Poverty & inequality",
+  "Environment & energy",
+  "Infrastructure & digital",
+  "Demographics",
+  "Governance",
+];
+
+const TOPIC_COLORS: Record<string, string> = {
+  "Health":                   "bg-[#EAF3DE] text-[#27500A]",
+  "Education":                "bg-[#E3EDFB] text-[#0C3B75]",
+  "Economy":                  "bg-[#FFF3D9] text-[#633806]",
+  "Poverty & inequality":     "bg-[#FCEBEB] text-[#791F1F]",
+  "Environment & energy":     "bg-[#E6F4F1] text-[#14493E]",
+  "Infrastructure & digital": "bg-[#EDE9FB] text-[#2D2475]",
+  "Demographics":             "bg-[#F4F0E8] text-[#4A3B1A]",
+  "Governance":               "bg-[#F0F0F0] text-[#333333]",
+};
+
+function groupByTopic(indicators: Indicator[]): Map<string, Indicator[]> {
+  const map = new Map<string, Indicator[]>();
+  for (const topic of TOPIC_ORDER) map.set(topic, []);
+  for (const ind of indicators) {
+    const arr = map.get(ind.topic);
+    if (arr) arr.push(ind);
+    else map.set(ind.topic, [ind]);
+  }
+  // Remove empty groups
+  for (const [k, v] of map) if (v.length === 0) map.delete(k);
+  return map;
+}
+
+function SdgBadge({ goal, target }: { goal: number; target?: string }) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <span className="inline-block px-1 py-0.5 rounded-[3px] text-[9px] font-medium bg-[#E3EDFB] text-[#0C3B75] leading-tight">
+      SDG {target ?? goal}
+    </span>
+  );
+}
+
+function IndicatorCard({ indicator }: { indicator: Indicator }) {
+  return (
+    <Link
+      href={`/indicator/${indicator.code}`}
+      className="group block bg-surface border border-subtle rounded-md p-3 hover:border-[rgba(0,0,0,0.18)] hover:shadow-sm transition-all"
+    >
+      <div className="flex items-start justify-between gap-1 mb-1.5">
+        <code className="text-[10px] font-mono text-tertiary group-hover:text-secondary transition-colors leading-tight">
+          {indicator.code}
+        </code>
+        {indicator.sdgGoal && (
+          <SdgBadge goal={indicator.sdgGoal} target={indicator.sdgTarget} />
+        )}
+      </div>
+      <div className="text-[12px] font-medium text-primary leading-snug mb-1">
+        {indicator.name}
+      </div>
+      <div className="text-[10px] text-tertiary leading-tight truncate">
+        {indicator.unit}
+      </div>
+      {indicator.coverageNote && (
+        <div className="mt-1.5 text-[9px] text-warning truncate">
+          {indicator.coverageNote}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+    </Link>
+  );
+}
+
+export default function CataloguePage() {
+  const grouped = groupByTopic(INDICATORS);
+
+  return (
+    <div className="max-w-[1280px] mx-auto px-6 py-8">
+      {/* Page header */}
+      <div className="mb-8 pb-5 border-b border-subtle">
+        <div className="uppercase text-[10px] tracking-[0.5px] text-tertiary mb-1">
+          World Development Indicators
         </div>
-      </main>
+        <h1 className="text-[22px] font-medium text-primary">Indicator catalogue</h1>
+        <p className="text-[13px] text-secondary mt-1 max-w-xl">
+          {INDICATORS.length} curated indicators from the World Bank WDI database. Click any indicator to open the deep-dive view.
+        </p>
+      </div>
+
+      {/* Topic sections */}
+      <div className="flex flex-col gap-8">
+        {Array.from(grouped.entries()).map(([topic, indicators]) => (
+          <section key={topic}>
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-[0.5px] ${TOPIC_COLORS[topic] ?? "bg-surface-2 text-secondary"}`}
+              >
+                {topic}
+              </span>
+              <span className="text-[11px] text-tertiary">{indicators.length} indicators</span>
+            </div>
+            <div
+              className="grid gap-2"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
+            >
+              {indicators.map((ind) => (
+                <IndicatorCard key={ind.code} indicator={ind} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <div className="mt-10 pt-5 border-t border-subtle text-[11px] text-tertiary">
+        Source: World Bank Open Data · Data fetched live at request time · 1-hour server cache
+      </div>
     </div>
   );
 }

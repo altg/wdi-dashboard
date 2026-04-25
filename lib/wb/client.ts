@@ -1,0 +1,103 @@
+import { WBResponseSchema, WBCountryResponseSchema } from "./schemas";
+
+const WB_BASE = "https://api.worldbank.org/v2";
+
+export type Observation = {
+  countryIso3: string;
+  countryName: string;
+  indicatorCode: string;
+  year: number;
+  value: number | null;
+};
+
+export type FetchIndicatorOptions = {
+  iso3s: string[];
+  code: string;
+  yearRange: [number, number];
+  perPage?: number;
+};
+
+export async function fetchIndicator({
+  iso3s,
+  code,
+  yearRange,
+  perPage = 1000,
+}: FetchIndicatorOptions): Promise<Observation[]> {
+  const countriesParam = iso3s.join(";");
+  const dateParam = `${yearRange[0]}:${yearRange[1]}`;
+  const url = `${WB_BASE}/country/${countriesParam}/indicator/${code}?format=json&date=${dateParam}&per_page=${perPage}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`WB API error ${res.status} for ${code}`);
+  }
+
+  const raw: unknown = await res.json();
+
+  // WB API returns [{message:[...]}] for unknown indicator codes — treat as no data.
+  if (
+    Array.isArray(raw) &&
+    raw.length === 1 &&
+    raw[0] !== null &&
+    typeof raw[0] === "object" &&
+    "message" in (raw[0] as object)
+  ) {
+    return [];
+  }
+
+  const parsed = WBResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error(`WB API response parse error: ${parsed.error.message}`);
+  }
+
+  const [meta, data] = parsed.data;
+  if (!data) return [];
+
+  const observations: Observation[] = data.map((obs) => ({
+    countryIso3: obs.countryiso3code,
+    countryName: obs.country.value,
+    indicatorCode: obs.indicator.id,
+    year: parseInt(obs.date, 10),
+    value: obs.value,
+  }));
+
+  // If there are more pages, fetch them all (paginate)
+  if (meta.pages > 1) {
+    const extraFetches = Array.from({ length: meta.pages - 1 }, (_, i) =>
+      fetch(
+        `${WB_BASE}/country/${countriesParam}/indicator/${code}?format=json&date=${dateParam}&per_page=${perPage}&page=${i + 2}`
+      ).then((r) => r.json())
+    );
+    const extras = await Promise.all(extraFetches);
+    for (const extra of extras) {
+      const p = WBResponseSchema.safeParse(extra);
+      if (p.success && p.data[1]) {
+        for (const obs of p.data[1]) {
+          observations.push({
+            countryIso3: obs.countryiso3code,
+            countryName: obs.country.value,
+            indicatorCode: obs.indicator.id,
+            year: parseInt(obs.date, 10),
+            value: obs.value,
+          });
+        }
+      }
+    }
+  }
+
+  return observations;
+}
+
+export async function fetchAllCountries() {
+  const url = `${WB_BASE}/country?format=json&per_page=300`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`WB API error ${res.status} fetching countries`);
+
+  const raw: unknown = await res.json();
+  const parsed = WBCountryResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error(`WB country response parse error: ${parsed.error.message}`);
+  }
+
+  return parsed.data[1] ?? [];
+}

@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WDI Dashboard
 
-## Getting Started
+A local-first dashboard for exploring World Bank **World Development Indicators** (WDI). Built for policy analysts and government staff. Dense, data-rich layout with peer-group comparisons, SDG benchmarks, and data-quality signals.
 
-First, run the development server:
+## Stack
+
+- **Next.js 14** — App Router, Server Components, TypeScript strict mode
+- **Tailwind CSS** — custom token layer (`bg-surface`, `text-primary`, etc.)
+- **Recharts** — all charts
+- **SWR** — client-side data fetching and caching
+- **Zod** — runtime validation of World Bank API responses
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. Navigate to any indicator, e.g.:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+/indicator/SH.STA.MMRT    — Maternal mortality
+/indicator/SE.ADT.LITR.ZS — Adult literacy rate
+/indicator/EG.ELC.ACCS.ZS — Access to electricity
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local data mode (optional)
 
-## Learn More
+For offline use or faster responses, load WDI data into DuckDB:
 
-To learn more about Next.js, take a look at the following resources:
+1. Download `WDIEXCEL.xlsx` from the World Bank data portal
+2. Place it in `D:\Projects\AI\WDI2\`
+3. Run the ingest script:
+   ```
+   D:\Projects\AI\WDI2\ingest.bat
+   ```
+4. Set the environment variable and restart:
+   ```bash
+   DATA_SOURCE=local npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Indicator deep-dive** — metadata strip, headline stat cards, SDG gap tracking
+- **Distribution histogram** — adaptive bin widths, SDG target reference line, color-coded by distance to target
+- **Regional trend chart** — indexed to 2000 baseline across MENA / South Asia / Sub-Saharan Africa / Latin America / High income
+- **Peer table** — sortable by any column, sparklines, CSV export, home-country highlight, full keyboard navigation (Tab + Arrow keys)
+- **Country drilldown** — trajectory vs regional and income group averages, driver indicators, policy event annotations
+- **Data quality signals** — coverage warnings, modelled estimate badges, uncertainty intervals
+- **Dark mode** — automatic via system preference
 
-## Deploy on Vercel
+## Data source
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Live from the World Bank WDI API via Next.js route handlers (avoids CORS, adds 1-hour server cache). No API key required.
