@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useDarkMode } from "@/lib/use-dark-mode";
 import useSWR from "swr";
+import { YearRangeSlider } from "@/components/year-range-slider";
 import {
   LineChart,
   Line,
@@ -37,6 +38,9 @@ type Props = {
   defaultPeer1: string;
   defaultPeer2: string;
   events: PolicyEvent[];
+  countryBObs?: Observation[];
+  countryBName?: string;
+  comparatorMode?: boolean;
 };
 
 const fetcher = (url: string) =>
@@ -79,20 +83,25 @@ export function TrajectoryChart({
   defaultPeer1,
   defaultPeer2,
   events,
+  countryBObs,
+  countryBName,
+  comparatorMode = false,
 }: Props) {
   const [peer1, setPeer1] = useState(defaultPeer1);
   const [peer2, setPeer2] = useState(defaultPeer2);
   const [downloading, setDownloading] = useState(false);
+  const [fromYear, setFromYear] = useState(MIN_YEAR);
+  const [toYear, setToYear] = useState(MAX_YEAR);
   const chartRef = useRef<HTMLDivElement>(null);
   const isDark = useDarkMode();
 
   const peer1Name = peerOptions.find((p) => p.iso3 === peer1)?.name ?? peer1;
   const peer2Name = peerOptions.find((p) => p.iso3 === peer2)?.name ?? peer2;
 
-  const swrKey1 = peer1
+  const swrKey1 = !comparatorMode && peer1
     ? `/api/wb/indicator/${indicator.code}?iso3s=${peer1}&from=${MIN_YEAR}&to=${MAX_YEAR}`
     : null;
-  const swrKey2 = peer2
+  const swrKey2 = !comparatorMode && peer2
     ? `/api/wb/indicator/${indicator.code}?iso3s=${peer2}&from=${MIN_YEAR}&to=${MAX_YEAR}`
     : null;
 
@@ -105,6 +114,8 @@ export function TrajectoryChart({
     revalidateOnFocus: false,
   });
 
+  const countryBKey = countryBName ?? "__countryB__";
+
   const chartData = useMemo(() => {
     const byIso = new Map<string, Map<number, number | null>>();
 
@@ -114,6 +125,7 @@ export function TrajectoryChart({
       [incomeGroupLabel, incomeGroupObs],
       ...(peer1Data ? [[peer1, peer1Data]] : []),
       ...(peer2Data ? [[peer2, peer2Data]] : []),
+      ...(countryBObs ? [[countryBKey, countryBObs]] : []),
     ] as [string, Observation[]][]) {
       for (const o of src) {
         if (!byIso.has(iso)) byIso.set(iso, new Map());
@@ -127,13 +139,15 @@ export function TrajectoryChart({
       { key: "incomeGroup", iso3: incomeGroupLabel },
       ...(peer1 ? [{ key: "peer1", iso3: peer1 }] : []),
       ...(peer2 ? [{ key: "peer2", iso3: peer2 }] : []),
+      ...(countryBObs ? [{ key: "countryB", iso3: countryBKey }] : []),
     ];
 
-    return Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) => {
-      const year = MIN_YEAR + i;
-      return buildPoint(year, byIso, keys);
-    });
-  }, [countryIso3, countryObs, regionObs, regionLabel, incomeGroupObs, incomeGroupLabel, peer1, peer1Data, peer2, peer2Data]);
+    const points = [];
+    for (let year = fromYear; year <= toYear; year++) {
+      points.push(buildPoint(year, byIso, keys));
+    }
+    return points;
+  }, [countryIso3, countryObs, regionObs, regionLabel, incomeGroupObs, incomeGroupLabel, peer1, peer1Data, peer2, peer2Data, countryBObs, countryBKey, fromYear, toYear]);
 
   async function handleDownloadPNG() {
     if (!chartRef.current) return;
@@ -156,10 +170,17 @@ export function TrajectoryChart({
   return (
     <div className="bg-surface border border-subtle rounded-md p-3.5 mb-2">
       {/* Header row */}
-      <div className="flex justify-between items-start mb-2">
-        <div className="font-medium text-primary">
-          Trajectory vs benchmarks · {MIN_YEAR}–{MAX_YEAR}
+      <div className="flex justify-between items-center mb-2 gap-3 flex-wrap">
+        <div className="font-medium text-primary shrink-0">
+          Trajectory vs benchmarks · {fromYear}–{toYear}
         </div>
+        <YearRangeSlider
+          min={MIN_YEAR}
+          max={MAX_YEAR}
+          from={fromYear}
+          to={toYear}
+          onChange={(f, t) => { setFromYear(f); setToYear(t); }}
+        />
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <button
             onClick={handleDownloadPNG}
@@ -169,37 +190,41 @@ export function TrajectoryChart({
           >
             {downloading ? "…" : "↓ PNG"}
           </button>
-          {/* Peer selectors */}
-          <span className="text-[10px] uppercase tracking-[0.4px] text-tertiary">Compare:</span>
-          <select
-            value={peer1}
-            onChange={(e) => setPeer1(e.target.value)}
-            className={selectCls}
-          >
-            <option value="">— none —</option>
-            {peerOptions.map((p) => (
-              <option key={p.iso3} value={p.iso3}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={peer2}
-            onChange={(e) => setPeer2(e.target.value)}
-            className={selectCls}
-          >
-            <option value="">— none —</option>
-            {peerOptions.map((p) => (
-              <option key={p.iso3} value={p.iso3}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          {/* Peer selectors — hidden in comparator mode */}
+          {!comparatorMode && (
+            <>
+              <span className="text-[10px] uppercase tracking-[0.4px] text-tertiary">Compare:</span>
+              <select
+                value={peer1}
+                onChange={(e) => setPeer1(e.target.value)}
+                className={selectCls}
+              >
+                <option value="">— none —</option>
+                {peerOptions.map((p) => (
+                  <option key={p.iso3} value={p.iso3}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={peer2}
+                onChange={(e) => setPeer2(e.target.value)}
+                className={selectCls}
+              >
+                <option value="">— none —</option>
+                {peerOptions.map((p) => (
+                  <option key={p.iso3} value={p.iso3}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
-      </div>
+      </div>  {/* end header row */}
 
       <div ref={chartRef}>
-      <div role="img" aria-label={`Trajectory chart for ${countryName} — ${indicator.name}, ${MIN_YEAR}–${MAX_YEAR}`}>
+      <div role="img" aria-label={`Trajectory chart for ${countryName} — ${indicator.name}, ${fromYear}–${toYear}`}>
         <ResponsiveContainer width="100%" height={220}>
         <LineChart data={chartData} margin={{ top: 8, right: 48, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="2 3" stroke={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"} vertical={false} />
@@ -274,6 +299,7 @@ export function TrajectoryChart({
                 incomeGroup: incomeGroupLabel,
                 peer1: peer1Name,
                 peer2: peer2Name,
+                countryB: countryBName ?? "Country B",
               };
               return [val, labels[String(key)] ?? String(key)];
             }}
@@ -298,8 +324,8 @@ export function TrajectoryChart({
             dot={false}
             connectNulls
           />
-          {/* Peer 2 */}
-          {peer2 && (
+          {/* Peer 2 — hidden in comparator mode */}
+          {!comparatorMode && peer2 && (
             <Line
               type="monotone"
               dataKey="peer2"
@@ -309,13 +335,24 @@ export function TrajectoryChart({
               connectNulls
             />
           )}
-          {/* Peer 1 */}
-          {peer1 && (
+          {/* Peer 1 — hidden in comparator mode */}
+          {!comparatorMode && peer1 && (
             <Line
               type="monotone"
               dataKey="peer1"
               stroke="#185FA5"
               strokeWidth={1.2}
+              dot={false}
+              connectNulls
+            />
+          )}
+          {/* Country B — comparator mode */}
+          {countryBObs && (
+            <Line
+              type="monotone"
+              dataKey="countryB"
+              stroke="#534AB7"
+              strokeWidth={2.2}
               dot={false}
               connectNulls
             />
@@ -337,10 +374,11 @@ export function TrajectoryChart({
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
         {[
           { label: countryName, color: "#0C447C", dash: false, width: 2.2 },
+          ...(countryBObs ? [{ label: countryBName ?? "Country B", color: "#534AB7", dash: false, width: 2.2 }] : []),
           { label: regionLabel, color: "#888780", dash: false, width: 1.2 },
           { label: incomeGroupLabel, color: "#B4B2A9", dash: true, width: 1 },
-          ...(peer1 ? [{ label: peer1Name, color: "#185FA5", dash: false, width: 1.2 }] : []),
-          ...(peer2 ? [{ label: peer2Name, color: "#D85A30", dash: false, width: 1.2 }] : []),
+          ...(!comparatorMode && peer1 ? [{ label: peer1Name, color: "#185FA5", dash: false, width: 1.2 }] : []),
+          ...(!comparatorMode && peer2 ? [{ label: peer2Name, color: "#D85A30", dash: false, width: 1.2 }] : []),
         ].map((s) => (
           <span key={s.label} className="flex items-center gap-1 text-[10px] text-secondary">
             <svg width="14" height="6" viewBox="0 0 14 6">
@@ -357,17 +395,17 @@ export function TrajectoryChart({
             {s.label}
           </span>
         ))}
-        {/* Peer loading / error indicators */}
-        {peer1 && peer1Loading && (
+        {/* Peer loading / error indicators — hidden in comparator mode */}
+        {!comparatorMode && peer1 && peer1Loading && (
           <span className="text-[10px] text-tertiary animate-pulse ml-2">Loading {peer1Name}…</span>
         )}
-        {peer2 && peer2Loading && (
+        {!comparatorMode && peer2 && peer2Loading && (
           <span className="text-[10px] text-tertiary animate-pulse ml-2">Loading {peer2Name}…</span>
         )}
-        {peer1 && peer1Error && (
+        {!comparatorMode && peer1 && peer1Error && (
           <span className="text-[10px] text-negative ml-2">⚠ Could not load {peer1Name}</span>
         )}
-        {peer2 && peer2Error && (
+        {!comparatorMode && peer2 && peer2Error && (
           <span className="text-[10px] text-negative ml-2">⚠ Could not load {peer2Name}</span>
         )}
       </div>

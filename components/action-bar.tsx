@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatCitation } from "@/lib/format";
 import { buildCSV, downloadCSV } from "@/lib/csv";
 import type { Indicator } from "@/lib/registry/indicators";
@@ -28,6 +29,8 @@ export function ActionBar({
   incomeGroupLabel,
 }: Props) {
   const [citationCopied, setCitationCopied] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleCopyCitation() {
     const citation = formatCitation({
@@ -63,6 +66,15 @@ export function ActionBar({
     downloadCSV(`${countryIso3}-${indicator.code}-trajectory.csv`, csv);
   }
 
+  function handleOpenComparator() {
+    const year = searchParams.get("year") ?? "";
+    const peer = searchParams.get("peer") ?? "";
+    const params = new URLSearchParams({ a: countryIso3 });
+    if (year) params.set("year", year);
+    if (peer) params.set("peer", peer);
+    router.push(`/indicator/${indicator.code}/compare?${params}`);
+  }
+
   const btnCls =
     "h-7 text-[11px] px-3 bg-surface border border-subtle rounded text-secondary hover:text-primary hover:bg-surface-2 transition-colors";
 
@@ -71,7 +83,7 @@ export function ActionBar({
       <button className={btnCls} disabled title="Phase 5">
         Pin to board
       </button>
-      <button className={btnCls} disabled title="Phase 5">
+      <button className={btnCls} onClick={handleOpenComparator}>
         Open in comparator
       </button>
       <button onClick={handleDownloadCSV} className={btnCls}>

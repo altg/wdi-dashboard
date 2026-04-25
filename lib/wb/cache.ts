@@ -113,3 +113,40 @@ export const getCachedCountries = unstable_cache(
   ["countries"],
   TTL
 );
+
+/**
+ * Single-country metadata (name, region, income group).
+ * Key: cmeta:{iso3}
+ */
+export function getCountryMeta(iso3: string) {
+  return unstable_cache(
+    async () => {
+      const all = await fetchAllCountries();
+      return all.find((c) => c.id === iso3) ?? null;
+    },
+    [`cmeta:${iso3}`],
+    { revalidate: 86400 }
+  )();
+}
+
+/**
+ * Single-country trajectory over a year range.
+ * Key: ctraj:{code}:{iso3}:{from}:{to}
+ */
+export function getCountryTrajectory(
+  indicatorCode: string,
+  iso3: string,
+  fromYear: number,
+  toYear: number
+) {
+  return unstable_cache(
+    () =>
+      fetchIndicator({
+        iso3s: [iso3],
+        code: indicatorCode,
+        yearRange: [fromYear, toYear],
+      }),
+    [`ctraj:${indicatorCode}:${iso3}:${fromYear}:${toYear}`],
+    TTL
+  )();
+}

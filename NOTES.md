@@ -32,3 +32,14 @@ What was implemented:
   - Driver table SVG track — uses var(--svg-track) CSS custom property (overridden in html.dark) since it's a Server
   Component
   - Status badges — dark: Tailwind variants for green/amber/red backgrounds
+
+---------------------------
+
+ - Commit 79aa713 — all 47 files staged and committed (phases 1–3 work: API routes, components, lib, docs, scripts)
+  - Tag checkpoint-pre-next-phase — annotated tag for easy rollback
+
+  To roll back to this point later if needed:
+  git reset --hard checkpoint-pre-next-phase
+  Or to inspect without resetting:
+  git checkout checkpoint-pre-next-phase
+

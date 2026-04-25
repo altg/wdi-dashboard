@@ -10,6 +10,7 @@ export type DriverRow = {
   peerMax: number | null;
   sdgDirection: "lower-is-better" | "higher-is-better";
   precision: number;
+  compareValue?: number | null;
 };
 
 type Props = {
@@ -45,13 +46,13 @@ function TickMark({
 }: {
   row: DriverRow;
 }) {
-  const { countryValue: cv, peerMedian: pm, peerMin, peerMax } = row;
+  const { countryValue: cv, peerMedian: pm, peerMin, peerMax, compareValue: cmp } = row;
   if (cv === null || pm === null || peerMin === null || peerMax === null) {
     return <span className="text-tertiary text-[11px]">—</span>;
   }
 
-  const allMin = Math.min(peerMin, cv);
-  const allMax = Math.max(peerMax, cv);
+  const allMin = Math.min(peerMin, cv, cmp !== null && cmp !== undefined ? cmp : cv);
+  const allMax = Math.max(peerMax, cv, cmp !== null && cmp !== undefined ? cmp : cv);
   const medPx = toPx(pm, allMin, allMax);
   const dotPx = toPx(cv, allMin, allMax);
   const color = dotColor(cv, pm, row.sdgDirection);
@@ -81,6 +82,10 @@ function TickMark({
         stroke="#888780"
         strokeWidth={1.5}
       />
+      {/* compare value dot (country B) */}
+      {cmp !== null && cmp !== undefined && (
+        <circle cx={toPx(cmp, allMin, allMax)} cy={6} r={3.5} fill="#534AB7" opacity={0.7} />
+      )}
       {/* country dot */}
       <circle cx={dotPx} cy={6} r={3.5} fill={color} />
     </svg>
