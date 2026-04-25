@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const iso3sParam = searchParams.get("iso3s") ?? "";
   const fromParam = searchParams.get("from") ?? "2000";
-  const toParam = searchParams.get("to") ?? String(new Date().getFullYear());
+  const toParam = searchParams.get("to") ?? "2025";
 
   const iso3s = iso3sParam ? iso3sParam.split(",").filter(Boolean) : ["all"];
   const yearRange: [number, number] = [

@@ -80,6 +80,15 @@ export async function fetchIndicator({
   }));
 }
 
+export async function fetchLatestYear(code: string): Promise<number | null> {
+  const rows = await query<{ year: number }>(
+    `SELECT MAX(year) AS year FROM observations WHERE indicator_code = ? AND value IS NOT NULL`,
+    [code]
+  );
+  const year = rows[0]?.year;
+  return year != null ? Number(year) : null;
+}
+
 export async function fetchAllCountries(): Promise<LocalCountry[]> {
   const rows = await query<CountryRow>(
     `SELECT country_code, country_name, region_code, region_name, income_code, income_name

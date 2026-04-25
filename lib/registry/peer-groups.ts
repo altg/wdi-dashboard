@@ -92,34 +92,55 @@ export const PEER_GROUPS: PeerGroup[] = [
     countryIso3s: ["CAN", "USA"],
   },
 
-  // Income groups
+  // Income groups — country lists sourced from WB classification in local DB
   {
     id: "hic",
     label: "High income",
     type: "income",
     wbAggregateCode: "HIC",
-    countryIso3s: [], // large list — omitted for brevity; filter dynamically via WB country metadata
+    countryIso3s: [
+      "ABW","AND","ARE","ASM","ATG","AUS","AUT","BEL","BGR","BHR","BHS","BMU","BRB","BRN",
+      "CAN","CHE","CHI","CHL","CRI","CUW","CYM","CYP","CZE","DEU","DNK","ESP","EST","FIN",
+      "FRA","FRO","GBR","GIB","GRC","GRL","GUM","GUY","HKG","HRV","HUN","IMN","IRL","ISL",
+      "ISR","ITA","JPN","KNA","KOR","KWT","LIE","LTU","LUX","LVA","MAC","MAF","MCO","MLT",
+      "MNP","NCL","NLD","NOR","NRU","NZL","OMN","PAN","PLW","POL","PRI","PRT","PYF","QAT",
+      "ROU","RUS","SAU","SGP","SMR","SVK","SVN","SWE","SXM","SYC","TCA","TTO","URY","USA",
+      "VGB","VIR",
+    ],
   },
   {
     id: "umic",
     label: "Upper middle income",
     type: "income",
     wbAggregateCode: "UMC",
-    countryIso3s: [],
+    countryIso3s: [
+      "ALB","ARG","ARM","AZE","BIH","BLR","BLZ","BRA","BWA","CHN","COL","CPV","CUB","DMA",
+      "DOM","DZA","ECU","FJI","GAB","GEO","GNQ","GRD","GTM","IDN","IRN","IRQ","JAM","KAZ",
+      "LBY","LCA","MDA","MDV","MEX","MHL","MKD","MNE","MNG","MUS","MYS","PER","PRY","SLV",
+      "SRB","SUR","THA","TKM","TON","TUR","TUV","UKR","VCT","WSM","XKX","ZAF",
+    ],
   },
   {
     id: "lmic",
     label: "Lower middle income",
     type: "income",
     wbAggregateCode: "LMC",
-    countryIso3s: [],
+    countryIso3s: [
+      "AGO","BEN","BGD","BOL","BTN","CIV","CMR","COG","COM","DJI","EGY","FSM","GHA","GIN",
+      "HND","HTI","IND","JOR","KEN","KGZ","KHM","KIR","LAO","LBN","LKA","LSO","MAR","MMR",
+      "MRT","NAM","NGA","NIC","NPL","PAK","PHL","PNG","PSE","SEN","SLB","STP","SWZ","TJK",
+      "TLS","TUN","TZA","UZB","VNM","VUT","ZMB","ZWE",
+    ],
   },
   {
     id: "lic",
     label: "Low income",
     type: "income",
     wbAggregateCode: "LIC",
-    countryIso3s: [],
+    countryIso3s: [
+      "AFG","BDI","BFA","CAF","COD","ERI","GMB","GNB","LBR","MDG","MLI","MOZ","MWI","NER",
+      "PRK","RWA","SDN","SLE","SOM","SSD","SYR","TCD","TGO","UGA","YEM",
+    ],
   },
 ];
 

@@ -8,6 +8,7 @@ import {
   getCountryHistory,
   getCountryMeta,
   getPeerGroupSnapshot,
+  getLatestAvailableYear,
 } from "@/lib/wb/cache";
 import { formatNumber, formatDelta } from "@/lib/format";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -19,7 +20,8 @@ import { DriverTable, type DriverRow } from "@/components/driver-table";
 import { sdgStatus } from "@/components/status-badge";
 
 const MIN_YEAR = 2000;
-const MAX_YEAR = 2023;
+const MAX_YEAR = 2025;
+const FALLBACK_YEAR = 2023;
 
 function median(values: number[]): number | null {
   if (!values.length) return null;
@@ -71,9 +73,11 @@ export default async function ComparePage({
 
   const isoB = typeof sp.b === "string" ? sp.b : null;
 
+  const latestYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+
   const selectedYear = Math.min(
-    MAX_YEAR,
-    Math.max(MIN_YEAR + 1, parseInt(typeof sp.year === "string" ? sp.year : String(MAX_YEAR), 10))
+    latestYear,
+    Math.max(MIN_YEAR + 1, parseInt(typeof sp.year === "string" ? sp.year : String(latestYear), 10))
   );
   const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? (sp.peer as string) : "mena";
   const peerGroup = getPeerGroup(peerGroupId) ?? getPeerGroup("mena")!;
@@ -231,8 +235,8 @@ export default async function ComparePage({
 
       <MetadataStrip
         indicator={indicator}
-        coverage={indicator.coverageNote ?? "2000–2023"}
-        yearRange="2000–2023"
+        coverage={indicator.coverageNote ?? `2000–${MAX_YEAR}`}
+        yearRange={`2000–${MAX_YEAR}`}
       />
 
       {/* Country pickers */}

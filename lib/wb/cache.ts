@@ -1,8 +1,8 @@
 import { unstable_cache } from "next/cache";
-import { fetchIndicator, fetchAllCountries } from "../data-source";
+import { fetchIndicator, fetchAllCountries, fetchLatestYear } from "../data-source";
 
 const MIN_YEAR = 2000;
-const MAX_YEAR = 2023;
+const MAX_YEAR = 2025;
 
 const TTL = { revalidate: 3600 } as const;
 
@@ -35,6 +35,8 @@ export function getPeerGroupHistory(
   iso3s: string[],
   toYear: number
 ) {
+  // Include iso3s in the cache key so changes to group membership produce a fresh fetch
+  const isoKey = iso3s.slice().sort().join(",");
   return unstable_cache(
     () =>
       fetchIndicator({
@@ -42,7 +44,7 @@ export function getPeerGroupHistory(
         code: indicatorCode,
         yearRange: [MIN_YEAR, toYear],
       }),
-    [`pgh:${indicatorCode}:${groupId}:${toYear}`],
+    [`pgh:${indicatorCode}:${groupId}:${toYear}:${isoKey}`],
     TTL
   )();
 }
@@ -100,6 +102,19 @@ export function getRegionTrend(indicatorCode: string, regionIso3s: string[]) {
         yearRange: [MIN_YEAR, MAX_YEAR],
       }),
     [`rt:${indicatorCode}`],
+    TTL
+  )();
+}
+
+/**
+ * Latest year with data for an indicator (queries WLD aggregate with mrv=1).
+ * Falls back to DEFAULT_YEAR if the WB API returns nothing.
+ * Key: lyr:{code}
+ */
+export function getLatestAvailableYear(indicatorCode: string) {
+  return unstable_cache(
+    () => fetchLatestYear(indicatorCode),
+    [`lyr:${indicatorCode}`],
     TTL
   )();
 }

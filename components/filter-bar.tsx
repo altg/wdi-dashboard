@@ -7,23 +7,24 @@ const REGIONS = PEER_GROUPS.filter((pg) => pg.type === "region");
 const INCOME_GROUPS = PEER_GROUPS.filter((pg) => pg.type === "income");
 
 const MIN_YEAR = 2000;
-const MAX_YEAR = 2023;
-const YEARS = Array.from(
-  { length: MAX_YEAR - MIN_YEAR + 1 },
-  (_, i) => MAX_YEAR - i
-);
 
 type Props = {
   coveragePct?: number | null;
+  latestYear?: number;
 };
 
-export function FilterBar({ coveragePct }: Props) {
+export function FilterBar({ coveragePct, latestYear = 2023 }: Props) {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  const YEARS = Array.from(
+    { length: latestYear - MIN_YEAR + 1 },
+    (_, i) => latestYear - i
+  );
+
   const peer = sp.get("peer") ?? "mena";
-  const year = sp.get("year") ?? String(MAX_YEAR);
+  const year = sp.get("year") ?? String(latestYear);
   const compare = sp.get("compare") ?? String(MIN_YEAR);
 
   function update(key: string, value: string) {

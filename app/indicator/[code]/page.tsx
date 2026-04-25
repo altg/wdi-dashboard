@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getIndicator } from "@/lib/registry/indicators";
 import { PEER_GROUPS, getPeerGroup } from "@/lib/registry/peer-groups";
-import { getRegionTrend, getGlobalSnapshot, getPeerGroupHistory } from "@/lib/wb/cache";
+import { getRegionTrend, getGlobalSnapshot, getPeerGroupHistory, getLatestAvailableYear } from "@/lib/wb/cache";
 import { formatNumber } from "@/lib/format";
 import {
   computeHistogramBins,
@@ -21,7 +21,8 @@ import { RelatedIndicators } from "@/components/related-indicators";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const MIN_YEAR = 2000;
-const MAX_YEAR = 2023;
+const MAX_YEAR = 2025;
+const FALLBACK_YEAR = 2023;
 
 const TREND_SERIES: TrendSeries[] = [
   { key: "MNA", label: "MENA",            color: "#D85A30" },
@@ -58,13 +59,15 @@ export default async function IndicatorPage({
   const indicator = getIndicator(code);
   if (!indicator) notFound();
 
-  // Parse + clamp URL params
+  // Resolve the latest year with data for this indicator, then parse + clamp URL params
+  const latestYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+
   const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer)
     ? sp.peer
     : "mena";
   const selectedYear = Math.min(
-    MAX_YEAR,
-    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(MAX_YEAR), 10))
+    latestYear,
+    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(latestYear), 10))
   );
   const compareYear = Math.min(
     selectedYear - 1,
@@ -173,7 +176,7 @@ export default async function IndicatorPage({
           <div className="h-7 w-20 bg-surface-2 rounded" />
         </div>
       }>
-        <FilterBar coveragePct={coveragePct} />
+        <FilterBar coveragePct={coveragePct} latestYear={latestYear} />
       </Suspense>
 
       {/* Headline row */}

@@ -6,6 +6,7 @@ import {
   getCachedCountries,
   getCountryHistory,
   getPeerGroupSnapshot,
+  getLatestAvailableYear,
 } from "@/lib/wb/cache";
 import { getCountryEvents } from "@/lib/registry/events";
 import { formatNumber, formatDelta } from "@/lib/format";
@@ -17,7 +18,8 @@ import { DataQualityPanel } from "@/components/data-quality-panel";
 import { sdgStatus, StatusBadge } from "@/components/status-badge";
 
 const MIN_YEAR = 2000;
-const MAX_YEAR = 2023;
+const MAX_YEAR = 2025;
+const FALLBACK_YEAR = 2023;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -45,10 +47,12 @@ export default async function CountryDrilldownPage({
   const indicator = getIndicator(code);
   if (!indicator) notFound();
 
+  const latestYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+
   const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? sp.peer : "mena";
   const selectedYear = Math.min(
-    MAX_YEAR,
-    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(MAX_YEAR), 10))
+    latestYear,
+    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(latestYear), 10))
   );
   const compareYear = Math.min(
     selectedYear - 1,

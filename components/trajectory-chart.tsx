@@ -21,7 +21,7 @@ import type { PolicyEvent } from "@/lib/registry/events";
 import type { Observation } from "@/lib/wb/client";
 
 const MIN_YEAR = 2000;
-const MAX_YEAR = 2023;
+const MAX_YEAR = 2025;
 
 type PeerOption = { iso3: string; name: string };
 

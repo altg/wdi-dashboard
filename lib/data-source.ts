@@ -27,3 +27,12 @@ export async function fetchAllCountries() {
   const { fetchAllCountries: apiFetch } = await import("./wb/client");
   return apiFetch();
 }
+
+export async function fetchLatestYear(code: string): Promise<number | null> {
+  if (DATA_SOURCE === "local") {
+    const { fetchLatestYear: localFetch } = await import("./local/client");
+    return localFetch(code);
+  }
+  const { fetchLatestYear: apiFetch } = await import("./wb/client");
+  return apiFetch(code);
+}

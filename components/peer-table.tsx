@@ -20,6 +20,7 @@ const fetcher = (url: string) =>
     return r.json() as Promise<Observation[]>;
   });
 
+
 type SortKey = "name" | "current" | "baseline" | "delta" | "pct" | "gap";
 
 type Props = {
@@ -85,9 +86,6 @@ export function PeerTable({
 
   const { data, error, isLoading } = useSWR<Observation[]>(swrKey, fetcher, {
     fallbackData: initialData,
-    // Server already fetched this data with a 1-hour cache; skip the client re-fetch
-    // unless the SWR key changes (year/peer group filter change triggers a new key).
-    revalidateIfStale: false,
     revalidateOnFocus: false,
     dedupingInterval: 60_000,
   });
@@ -95,8 +93,7 @@ export function PeerTable({
   const { rows, aggregateRow } = useMemo(() => {
     if (!data) return { rows: [], aggregateRow: null };
 
-    const isAggregate = (iso3: string) =>
-      iso3 === aggregateCode || !peerGroup.countryIso3s.includes(iso3);
+    const isAggregate = (iso3: string) => iso3 === aggregateCode;
 
     // Group by country
     const byCountry = new Map<string, { name: string; byYear: Map<number, number | null> }>();
@@ -157,7 +154,7 @@ export function PeerTable({
     }
 
     return { rows: countryRows, aggregateRow: aggRow };
-  }, [data, selectedYear, compareYear, indicator, aggregateCode, peerGroup.countryIso3s]);
+  }, [data, selectedYear, compareYear, indicator, aggregateCode]);
 
   const sortedRows = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;

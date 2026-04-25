@@ -88,6 +88,24 @@ export async function fetchIndicator({
   return observations;
 }
 
+export async function fetchLatestYear(code: string): Promise<number | null> {
+  const url = `${WB_BASE}/country/WLD/indicator/${code}?format=json&mrv=1&per_page=1`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const raw: unknown = await res.json();
+  if (
+    Array.isArray(raw) &&
+    raw.length === 1 &&
+    typeof raw[0] === "object" &&
+    raw[0] !== null &&
+    "message" in (raw[0] as object)
+  ) return null;
+  const parsed = WBResponseSchema.safeParse(raw);
+  if (!parsed.success || !parsed.data[1]?.length) return null;
+  const year = parseInt(parsed.data[1][0].date, 10);
+  return isNaN(year) ? null : year;
+}
+
 export async function fetchAllCountries() {
   const url = `${WB_BASE}/country?format=json&per_page=300`;
   const res = await fetch(url);
