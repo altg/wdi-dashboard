@@ -7,6 +7,14 @@ export type PeerGroup = {
   countryIso3s: string[];
 };
 
+export type CustomPeerGroup = {
+  id: string;           // "custom:abc123"
+  label: string;
+  type: "custom";
+  countryIso3s: string[];
+  createdAt: number;
+};
+
 // WB region codes and their member country ISO3 codes
 // Sources: World Bank country classification
 export const PEER_GROUPS: PeerGroup[] = [
@@ -150,4 +158,84 @@ export const PEER_GROUP_MAP = new Map<string, PeerGroup>(
 
 export function getPeerGroup(id: string): PeerGroup | undefined {
   return PEER_GROUP_MAP.get(id);
+}
+
+// ── Starter templates ──────────────────────────────────────────────────────────
+
+export const STARTER_TEMPLATES: Array<{ label: string; countryIso3s: string[] }> = [
+  {
+    label: "GCC",
+    countryIso3s: ["BHR", "KWT", "OMN", "QAT", "SAU", "ARE"],
+  },
+  {
+    label: "ASEAN",
+    countryIso3s: ["BRN", "KHM", "IDN", "LAO", "MYS", "MMR", "PHL", "SGP", "THA", "VNM"],
+  },
+  {
+    label: "G20",
+    countryIso3s: [
+      "ARG", "AUS", "BRA", "CAN", "CHN", "FRA", "DEU", "IND", "IDN",
+      "ITA", "JPN", "KOR", "MEX", "RUS", "SAU", "ZAF", "TUR", "GBR", "USA",
+    ],
+  },
+  {
+    label: "EU27",
+    countryIso3s: [
+      "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN",
+      "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX",
+      "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE",
+    ],
+  },
+  {
+    label: "OIC",
+    countryIso3s: [
+      "AFG", "ALB", "DZA", "AZE", "BHR", "BGD", "BEN", "BRN", "BFA",
+      "CMR", "CAF", "TCD", "COM", "CIV", "DJI", "EGY", "GAB", "GMB",
+      "GIN", "GNB", "IDN", "IRN", "IRQ", "JOR", "KAZ", "KWT", "KGZ",
+      "LBN", "LBY", "MYS", "MDV", "MLI", "MRT", "MAR", "MOZ", "NER",
+      "NGA", "OMN", "PAK", "PSE", "QAT", "SAU", "SEN", "SLE", "SOM",
+      "SDN", "SUR", "SYR", "TJK", "TGO", "TUN", "TUR", "TKM", "UGA",
+      "ARE", "UZB", "YEM",
+    ],
+  },
+  {
+    label: "IsDB",
+    countryIso3s: [
+      "AFG", "ALB", "DZA", "AZE", "BGD", "BEN", "BRN", "BFA", "CMR",
+      "CAF", "TCD", "COM", "CIV", "DJI", "EGY", "GAB", "GMB", "GIN",
+      "GNB", "IDN", "IRN", "IRQ", "JOR", "KAZ", "KWT", "KGZ", "LBN",
+      "LBY", "MYS", "MDV", "MLI", "MRT", "MAR", "MOZ", "NER", "NGA",
+      "OMN", "PAK", "PSE", "QAT", "SAU", "SEN", "SLE", "SOM", "SDN",
+      "SUR", "SYR", "TJK", "TGO", "TUN", "TUR", "TKM", "UGA", "ARE",
+      "UZB", "YEM",
+    ],
+  },
+];
+
+// ── localStorage helpers (client-only) ────────────────────────────────────────
+
+const CUSTOM_KEY = "wdi_custom_peers_v1";
+
+export function getCustomPeerGroups(): CustomPeerGroup[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as CustomPeerGroup[];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomPeerGroup(group: CustomPeerGroup): void {
+  const existing = getCustomPeerGroups();
+  const idx = existing.findIndex((g) => g.id === group.id);
+  if (idx >= 0) existing[idx] = group;
+  else existing.push(group);
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(existing));
+}
+
+export function deleteCustomPeerGroup(id: string): void {
+  const updated = getCustomPeerGroups().filter((g) => g.id !== id);
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(updated));
 }

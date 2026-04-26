@@ -17,6 +17,16 @@ export type FetchIndicatorOptions = {
   perPage?: number;
 };
 
+/** Fetch multiple indicators for a single country in one batched request. */
+export async function fetchCountryIndicators(
+  iso3: string,
+  codes: string[],
+  yearRange: [number, number]
+): Promise<Observation[]> {
+  if (codes.length === 0) return [];
+  return fetchIndicator({ iso3s: [iso3], code: codes.join(";"), yearRange, perPage: 1000 });
+}
+
 export async function fetchIndicator({
   iso3s,
   code,

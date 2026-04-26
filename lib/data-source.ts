@@ -28,6 +28,19 @@ export async function fetchAllCountries() {
   return apiFetch();
 }
 
+export async function fetchCountryIndicators(
+  iso3: string,
+  codes: string[],
+  yearRange: [number, number]
+): Promise<Observation[]> {
+  if (DATA_SOURCE === "local") {
+    const { fetchCountryIndicators: localFetch } = await import("./local/client");
+    return localFetch(iso3, codes, yearRange);
+  }
+  const { fetchCountryIndicators: apiFetch } = await import("./wb/client");
+  return apiFetch(iso3, codes, yearRange);
+}
+
 export async function fetchLatestYear(code: string): Promise<number | null> {
   if (DATA_SOURCE === "local") {
     const { fetchLatestYear: localFetch } = await import("./local/client");

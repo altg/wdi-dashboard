@@ -80,6 +80,39 @@ export async function fetchIndicator({
   }));
 }
 
+/** Fetch multiple indicators for a single country in one SQL query. */
+export async function fetchCountryIndicators(
+  iso3: string,
+  codes: string[],
+  yearRange: [number, number]
+): Promise<Observation[]> {
+  if (codes.length === 0) return [];
+  const [fromYear, toYear] = yearRange;
+  const placeholders = codes.map(() => "?").join(", ");
+  const rows = await query<{
+    country_code: string;
+    country_name: string;
+    indicator_code: string;
+    year: number;
+    value: number;
+  }>(
+    `SELECT country_code, country_name, indicator_code, year, value
+     FROM observations
+     WHERE country_code = ?
+       AND indicator_code IN (${placeholders})
+       AND year >= ? AND year <= ?
+     ORDER BY indicator_code, year`,
+    [iso3, ...codes, fromYear, toYear] as DuckDBValue[]
+  );
+  return rows.map((r) => ({
+    countryIso3: r.country_code,
+    countryName: r.country_name,
+    indicatorCode: r.indicator_code,
+    year: Number(r.year),
+    value: r.value !== null ? Number(r.value) : null,
+  }));
+}
+
 export async function fetchLatestYear(code: string): Promise<number | null> {
   const rows = await query<{ year: number }>(
     `SELECT MAX(year) AS year FROM observations WHERE indicator_code = ? AND value IS NOT NULL`,

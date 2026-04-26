@@ -8,8 +8,8 @@ import {
   getCountryHistory,
   getCountryMeta,
   getPeerGroupSnapshot,
-  getLatestAvailableYear,
 } from "@/lib/wb/cache";
+import { resolveYearWindow } from "@/lib/year-range";
 import { formatNumber, formatDelta } from "@/lib/format";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { MetadataStrip } from "@/components/metadata-strip";
@@ -19,9 +19,7 @@ import { TrajectoryChart } from "@/components/trajectory-chart";
 import { DriverTable, type DriverRow } from "@/components/driver-table";
 import { sdgStatus } from "@/components/status-badge";
 
-const MIN_YEAR = 2000;
 const MAX_YEAR = 2025;
-const FALLBACK_YEAR = 2023;
 
 function median(values: number[]): number | null {
   if (!values.length) return null;
@@ -73,12 +71,8 @@ export default async function ComparePage({
 
   const isoB = typeof sp.b === "string" ? sp.b : null;
 
-  const latestYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+  const { selectedYear } = await resolveYearWindow(code, sp);
 
-  const selectedYear = Math.min(
-    latestYear,
-    Math.max(MIN_YEAR + 1, parseInt(typeof sp.year === "string" ? sp.year : String(latestYear), 10))
-  );
   const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? (sp.peer as string) : "mena";
   const peerGroup = getPeerGroup(peerGroupId) ?? getPeerGroup("mena")!;
 

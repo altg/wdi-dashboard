@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 type Props = {
   isLocal: boolean;
@@ -25,7 +26,7 @@ export function NavBar({ isLocal }: Props) {
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     try {
-      localStorage.setItem("wdi_theme", next ? "dark" : "light");
+      localStorage.setItem(STORAGE_KEYS.theme, next ? "dark" : "light");
     } catch {}
   }
 

@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
-import { fetchIndicator, fetchAllCountries, fetchLatestYear } from "../data-source";
+import { fetchIndicator, fetchAllCountries, fetchLatestYear, fetchCountryIndicators } from "../data-source";
+import { INDICATORS } from "@/lib/registry/indicators";
+import { TOPIC_ORDER } from "@/lib/topics";
 
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2025;
@@ -141,6 +143,32 @@ export function getCountryMeta(iso3: string) {
     },
     [`cmeta:${iso3}`],
     { revalidate: 86400 }
+  )();
+}
+
+/**
+ * All curated indicators for one country, batched by topic.
+ * Key: cai:{iso3}
+ */
+export function getCountryAllIndicators(iso3: string) {
+  return unstable_cache(
+    async () => {
+      const byTopic = new Map<string, string[]>();
+      for (const topic of TOPIC_ORDER) byTopic.set(topic, []);
+      for (const ind of INDICATORS) {
+        const arr = byTopic.get(ind.topic);
+        if (arr) arr.push(ind.code);
+        else byTopic.set(ind.topic, [ind.code]);
+      }
+      const batches = await Promise.all(
+        [...byTopic.values()]
+          .filter((codes) => codes.length > 0)
+          .map((codes) => fetchCountryIndicators(iso3, codes, [MIN_YEAR, MAX_YEAR]))
+      );
+      return batches.flat();
+    },
+    [`cai:${iso3}`],
+    TTL
   )();
 }
 

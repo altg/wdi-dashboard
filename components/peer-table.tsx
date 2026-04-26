@@ -10,8 +10,9 @@ import { formatNumber, formatDelta } from "@/lib/format";
 import type { Indicator } from "@/lib/registry/indicators";
 import type { PeerGroup } from "@/lib/registry/peer-groups";
 import type { Observation } from "@/lib/wb/client";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
-const HOME_KEY = "wdi_home_country";
+const HOME_KEY = STORAGE_KEYS.home;
 const MIN_YEAR = 2000;
 
 const fetcher = (url: string) =>
@@ -153,8 +154,39 @@ export function PeerTable({
       }
     }
 
+    // For custom groups there is no WB aggregate — compute mean from country rows
+    if (!aggRow && peerGroup.type === "custom") {
+      const withCurrent = countryRows.filter((r) => r.vCurrent !== null);
+      if (withCurrent.length > 0) {
+        const avgCurrent =
+          withCurrent.reduce((s, r) => s + (r.vCurrent as number), 0) /
+          withCurrent.length;
+        const withBase = countryRows.filter((r) => r.vBase !== null);
+        const avgBase =
+          withBase.length > 0
+            ? withBase.reduce((s, r) => s + (r.vBase as number), 0) / withBase.length
+            : null;
+        const delta = avgBase !== null ? avgCurrent - avgBase : null;
+        const pct =
+          delta !== null && avgBase !== null && avgBase !== 0
+            ? (delta / avgBase) * 100
+            : null;
+        aggRow = {
+          iso3: "__custom_avg__",
+          name: "Custom group avg",
+          vCurrent: avgCurrent,
+          vBase: avgBase,
+          delta,
+          pct,
+          gap: null,
+          trend: [],
+          status: "no-target" as const,
+        };
+      }
+    }
+
     return { rows: countryRows, aggregateRow: aggRow };
-  }, [data, selectedYear, compareYear, indicator, aggregateCode]);
+  }, [data, selectedYear, compareYear, indicator, aggregateCode, peerGroup.type]);
 
   const sortedRows = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -431,7 +463,7 @@ export function PeerTable({
                     tabIndex={0}
                     role="row"
                     aria-label={`${row.name} — click to open country drilldown`}
-                    className={`border-t border-subtle hover:bg-surface-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-inset ${
+                    className={`group border-t border-subtle hover:bg-surface-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-inset ${
                       isHome
                         ? "bg-[rgba(24,95,165,0.04)] border-l-2 border-l-chart-1"
                         : ""
@@ -440,7 +472,18 @@ export function PeerTable({
                     <td
                       className={`px-3.5 py-1.5 ${isHome ? "font-medium text-primary" : "text-primary"}`}
                     >
-                      {row.name}
+                      <span className="flex items-center gap-1.5">
+                        <span>{row.name}</span>
+                        <a
+                          href={`/country/${row.iso3}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] text-tertiary hover:text-info transition-colors opacity-0 group-hover:opacity-100"
+                          title={`${row.name} country profile`}
+                          tabIndex={-1}
+                        >
+                          → Profile
+                        </a>
+                      </span>
                     </td>
                     <td className="px-3.5 py-1.5 text-right tabular-nums text-primary font-medium">
                       {row.vCurrent !== null

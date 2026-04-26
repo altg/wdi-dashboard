@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getIndicator } from "@/lib/registry/indicators";
-import { PEER_GROUPS, getPeerGroup } from "@/lib/registry/peer-groups";
-import { getRegionTrend, getGlobalSnapshot, getPeerGroupHistory, getLatestAvailableYear } from "@/lib/wb/cache";
+import { PEER_GROUPS, getPeerGroup, type PeerGroup } from "@/lib/registry/peer-groups";
+import { getRegionTrend, getGlobalSnapshot, getPeerGroupHistory } from "@/lib/wb/cache";
+import { resolveYearWindow } from "@/lib/year-range";
 import { formatNumber } from "@/lib/format";
 import {
   computeHistogramBins,
@@ -22,7 +23,6 @@ import { RelatedIndicators } from "@/components/related-indicators";
 // ── Constants ────────────────────────────────────────────────────────────────
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2025;
-const FALLBACK_YEAR = 2023;
 
 const TREND_SERIES: TrendSeries[] = [
   { key: "MNA", label: "MENA",            color: "#D85A30" },
@@ -59,22 +59,19 @@ export default async function IndicatorPage({
   const indicator = getIndicator(code);
   if (!indicator) notFound();
 
-  // Resolve the latest year with data for this indicator, then parse + clamp URL params
-  const latestYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+  const { selectedYear, compareYear, latestYear } = await resolveYearWindow(code, sp);
 
-  const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer)
-    ? sp.peer
-    : "mena";
-  const selectedYear = Math.min(
-    latestYear,
-    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(latestYear), 10))
-  );
-  const compareYear = Math.min(
-    selectedYear - 1,
-    Math.max(MIN_YEAR, parseInt(sp.compare ?? String(MIN_YEAR), 10))
-  );
-
-  const peerGroup = getPeerGroup(peerGroupId) ?? getPeerGroup("mena")!;
+  // Resolve peer group — built-in or custom (from URL members list)
+  let peerGroup: PeerGroup;
+  if (sp.peer === "custom") {
+    const memberIso3s = (sp.members ?? "").split(",").filter(Boolean);
+    peerGroup = memberIso3s.length > 0
+      ? { id: "custom", label: "Custom group", type: "custom", countryIso3s: memberIso3s }
+      : getPeerGroup("mena")!;
+  } else {
+    const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? sp.peer : "mena";
+    peerGroup = getPeerGroup(peerGroupId) ?? getPeerGroup("mena")!;
+  }
 
   // Include the WB aggregate code in the peer fetch so PeerTable can show the group average.
   const aggregateCode = peerGroup.wbAggregateCode ?? "";
@@ -91,7 +88,7 @@ export default async function IndicatorPage({
     getRegionTrend(code, regionIso3s),
     getGlobalSnapshot(code, selectedYear),
     allPeerIso3s.length > 0
-      ? getPeerGroupHistory(code, peerGroupId, allPeerIso3s, selectedYear)
+      ? getPeerGroupHistory(code, peerGroup.id, allPeerIso3s, selectedYear)
       : Promise.resolve([]),
   ]);
 
@@ -153,7 +150,7 @@ export default async function IndicatorPage({
   )?.value ?? null;
 
   // ── Render ───────────────────────────────────────────────────────────────
-  const isRegionGroup = peerGroup.type === "region";
+  const showStatGrid = peerGroup.type === "region" || peerGroup.type === "custom";
 
   return (
     <div className="max-w-[1280px] mx-auto px-6 py-6">
@@ -193,7 +190,7 @@ export default async function IndicatorPage({
             </div>
           </div>
 
-          {isRegionGroup && peerLatest.length > 0 ? (
+          {showStatGrid && peerLatest.length > 0 ? (
             <StatGrid cols={4}>
               <StatCard
                 label="Peer avg"
@@ -237,6 +234,8 @@ export default async function IndicatorPage({
             <div className="h-[68px] flex items-center justify-center text-[12px] text-tertiary">
               {peerGroup.type === "income"
                 ? "Country-level breakdown for income groups coming soon"
+                : peerLatest.length === 0
+                ? "No data available for this peer group"
                 : "No data available"}
             </div>
           )}

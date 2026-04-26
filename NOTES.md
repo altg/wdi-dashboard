@@ -43,3 +43,38 @@ What was implemented:
   Or to inspect without resetting:
   git checkout checkpoint-pre-next-phase
 
+
+-----------------------------------
+
+
+ Checkpoint committed as a5bf20f — 11 files, 948 insertions. You can roll back with git reset --hard a5bf20f's parent
+  (79aa713) if needed. Ready to proceed with the extended indicators feature.
+
+-----------------------
+
+ Committed as 7e0ce9a — checkpoint V1.5 with all 14 changed files. The CRLF warnings are just Git normalizing line
+  endings on Windows and don't affect anything.
+
+
+----------------------------
+
+
+ Clean build. V2.2 is complete. Here's what was implemented:
+
+  lib/registry/peer-groups.ts — Added CustomPeerGroup type, 6 starter templates (GCC, ASEAN, G20, EU27, OIC, IsDB), and
+  localStorage helpers (getCustomPeerGroups, saveCustomPeerGroup, deleteCustomPeerGroup).
+
+  components/peer-group-builder.tsx — New modal with name input, template quick-select buttons, searchable country multi-select
+   (reuses /api/wb/countries), chip display of selected countries, and Save/Cancel.
+
+  components/filter-bar.tsx — Custom groups optgroup in the select, + Custom button triggers the modal, edit/delete buttons
+  appear when a custom group is active. URL shape: ?peer=custom&members=ISO1,ISO2,....
+
+  app/indicator/[code]/page.tsx — Parses ?peer=custom&members=... to build a synthetic PeerGroup. Custom groups show stat cards
+   (same as region groups). Falls back to MENA if members param is absent.
+
+  components/peer-table.tsx — When peerGroup.type === "custom", computes mean from country rows as the aggregate footer row
+  labelled "Custom group avg".
+
+  Stopping point per plan: user can build "My GCC" from the modal, see it in the dropdown, share the URL, and the deep-dive
+  renders with a custom-group average row. Ready for human review.

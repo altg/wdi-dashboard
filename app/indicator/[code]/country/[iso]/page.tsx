@@ -6,8 +6,8 @@ import {
   getCachedCountries,
   getCountryHistory,
   getPeerGroupSnapshot,
-  getLatestAvailableYear,
 } from "@/lib/wb/cache";
+import { resolveYearWindow } from "@/lib/year-range";
 import { getCountryEvents } from "@/lib/registry/events";
 import { formatNumber, formatDelta } from "@/lib/format";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -16,10 +16,6 @@ import { TrajectoryChart } from "@/components/trajectory-chart";
 import { DriverTable, type DriverRow } from "@/components/driver-table";
 import { DataQualityPanel } from "@/components/data-quality-panel";
 import { sdgStatus, StatusBadge } from "@/components/status-badge";
-
-const MIN_YEAR = 2000;
-const MAX_YEAR = 2025;
-const FALLBACK_YEAR = 2023;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -47,17 +43,9 @@ export default async function CountryDrilldownPage({
   const indicator = getIndicator(code);
   if (!indicator) notFound();
 
-  const maxDataYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+  const { selectedYear, compareYear } = await resolveYearWindow(code, sp);
 
   const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? sp.peer : "mena";
-  const selectedYear = Math.min(
-    maxDataYear,
-    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(maxDataYear), 10))
-  );
-  const compareYear = Math.min(
-    selectedYear - 1,
-    Math.max(MIN_YEAR, parseInt(sp.compare ?? String(MIN_YEAR), 10))
-  );
   const peerGroup = getPeerGroup(peerGroupId) ?? getPeerGroup("mena")!;
 
   // Step 1: country metadata (fast — cached)
@@ -188,6 +176,7 @@ export default async function CountryDrilldownPage({
   if (sp.year) backParams.set("year", sp.year);
   if (sp.compare) backParams.set("compare", sp.compare);
   const backHref = `/indicator/${code}${backParams.size ? `?${backParams}` : ""}`;
+  const fromProfile = sp.from === "profile";
 
   const isImproving =
     pctChange !== null
@@ -202,6 +191,9 @@ export default async function CountryDrilldownPage({
       {/* Breadcrumb */}
       <Breadcrumb
         crumbs={[
+          ...(fromProfile
+            ? [{ label: `${countryMeta.name} profile`, href: `/country/${iso}` }]
+            : []),
           { label: indicator.name, href: backHref },
           { label: peerGroup.label },
           { label: countryMeta.name },

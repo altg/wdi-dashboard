@@ -6,8 +6,9 @@ import useSWR from "swr";
 import { getIndicator } from "@/lib/registry/indicators";
 import { formatNumber } from "@/lib/format";
 import type { Observation } from "@/lib/wb/client";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
-const HOME_KEY = "wdi_home_country";
+const HOME_KEY = STORAGE_KEYS.home;
 
 const fetcher = (url: string) =>
   fetch(url).then((r) => {
