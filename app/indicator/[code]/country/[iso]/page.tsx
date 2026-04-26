@@ -47,12 +47,12 @@ export default async function CountryDrilldownPage({
   const indicator = getIndicator(code);
   if (!indicator) notFound();
 
-  const latestYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
+  const maxDataYear = Math.min(MAX_YEAR, (await getLatestAvailableYear(code)) ?? FALLBACK_YEAR);
 
   const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? sp.peer : "mena";
   const selectedYear = Math.min(
-    latestYear,
-    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(latestYear), 10))
+    maxDataYear,
+    Math.max(MIN_YEAR + 1, parseInt(sp.year ?? String(maxDataYear), 10))
   );
   const compareYear = Math.min(
     selectedYear - 1,
