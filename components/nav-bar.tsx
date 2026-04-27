@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { getBoard } from "@/lib/board";
 
 type Props = {
   isLocal: boolean;
@@ -15,11 +16,13 @@ export function NavBar({ isLocal }: Props) {
 
   const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [pinCount, setPinCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
     setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+    setPinCount(getBoard().length);
+  }, [pathname]);
 
   function toggleDark() {
     const next = !dark;
@@ -53,6 +56,26 @@ export function NavBar({ isLocal }: Props) {
       >
         WDI Dashboard
       </Link>
+
+      {/* Board link */}
+      {mounted && (
+        <Link
+          href="/board"
+          className={`flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded border transition-colors ${
+            pathname === "/board"
+              ? "text-info border-info/40 bg-info/5"
+              : "text-secondary hover:text-primary border-transparent hover:bg-surface-2 hover:border-subtle"
+          }`}
+          title="Pinned board"
+        >
+          ☆ Board
+          {pinCount > 0 && (
+            <span className="text-[9px] font-mono bg-surface-2 border border-subtle rounded px-1 tabular-nums">
+              {pinCount}
+            </span>
+          )}
+        </Link>
+      )}
 
       <div className="flex-1" />
 

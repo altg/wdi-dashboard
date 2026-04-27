@@ -41,6 +41,8 @@ type Props = {
   countryBObs?: Observation[];
   countryBName?: string;
   comparatorMode?: boolean;
+  peerGroupAvgObs?: Observation[];
+  peerGroupAvgLabel?: string;
 };
 
 const fetcher = (url: string) =>
@@ -86,6 +88,8 @@ export function TrajectoryChart({
   countryBObs,
   countryBName,
   comparatorMode = false,
+  peerGroupAvgObs,
+  peerGroupAvgLabel,
 }: Props) {
   const [peer1, setPeer1] = useState(defaultPeer1);
   const [peer2, setPeer2] = useState(defaultPeer2);
@@ -126,6 +130,7 @@ export function TrajectoryChart({
       ...(peer1Data ? [[peer1, peer1Data]] : []),
       ...(peer2Data ? [[peer2, peer2Data]] : []),
       ...(countryBObs ? [[countryBKey, countryBObs]] : []),
+      ...(peerGroupAvgObs ? [["__peerGroupAvg__", peerGroupAvgObs]] : []),
     ] as [string, Observation[]][]) {
       for (const o of src) {
         if (!byIso.has(iso)) byIso.set(iso, new Map());
@@ -140,6 +145,7 @@ export function TrajectoryChart({
       ...(peer1 ? [{ key: "peer1", iso3: peer1 }] : []),
       ...(peer2 ? [{ key: "peer2", iso3: peer2 }] : []),
       ...(countryBObs ? [{ key: "countryB", iso3: countryBKey }] : []),
+      ...(peerGroupAvgObs ? [{ key: "peerGroupAvg", iso3: "__peerGroupAvg__" }] : []),
     ];
 
     const points = [];
@@ -147,7 +153,7 @@ export function TrajectoryChart({
       points.push(buildPoint(year, byIso, keys));
     }
     return points;
-  }, [countryIso3, countryObs, regionObs, regionLabel, incomeGroupObs, incomeGroupLabel, peer1, peer1Data, peer2, peer2Data, countryBObs, countryBKey, fromYear, toYear]);
+  }, [countryIso3, countryObs, regionObs, regionLabel, incomeGroupObs, incomeGroupLabel, peer1, peer1Data, peer2, peer2Data, countryBObs, countryBKey, peerGroupAvgObs, fromYear, toYear]);
 
   async function handleDownloadPNG() {
     if (!chartRef.current) return;
@@ -300,6 +306,7 @@ export function TrajectoryChart({
                 peer1: peer1Name,
                 peer2: peer2Name,
                 countryB: countryBName ?? "Country B",
+                peerGroupAvg: peerGroupAvgLabel ?? "Custom group avg",
               };
               return [val, labels[String(key)] ?? String(key)];
             }}
@@ -315,6 +322,18 @@ export function TrajectoryChart({
             dot={false}
             connectNulls
           />
+          {/* Custom peer group avg */}
+          {peerGroupAvgObs && (
+            <Line
+              type="monotone"
+              dataKey="peerGroupAvg"
+              stroke="#2D8A6E"
+              strokeWidth={1.4}
+              strokeDasharray="5 3"
+              dot={false}
+              connectNulls
+            />
+          )}
           {/* Region avg */}
           <Line
             type="monotone"
@@ -377,6 +396,7 @@ export function TrajectoryChart({
           ...(countryBObs ? [{ label: countryBName ?? "Country B", color: "#534AB7", dash: false, width: 2.2 }] : []),
           { label: regionLabel, color: "#888780", dash: false, width: 1.2 },
           { label: incomeGroupLabel, color: "#B4B2A9", dash: true, width: 1 },
+          ...(peerGroupAvgObs ? [{ label: peerGroupAvgLabel ?? "Custom group avg", color: "#2D8A6E", dash: true, width: 1.4 }] : []),
           ...(!comparatorMode && peer1 ? [{ label: peer1Name, color: "#185FA5", dash: false, width: 1.2 }] : []),
           ...(!comparatorMode && peer2 ? [{ label: peer2Name, color: "#D85A30", dash: false, width: 1.2 }] : []),
         ].map((s) => (

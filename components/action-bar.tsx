@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatCitation } from "@/lib/format";
 import { buildCSV, downloadCSV } from "@/lib/csv";
+import { PinButton } from "@/components/pin-button";
 import type { Indicator } from "@/lib/registry/indicators";
 import type { Observation } from "@/lib/wb/client";
 
@@ -80,9 +81,14 @@ export function ActionBar({
 
   return (
     <div className="flex gap-2 justify-end">
-      <button className={btnCls} disabled title="Phase 5">
-        Pin to board
-      </button>
+      <PinButton
+        indicatorCode={indicator.code}
+        indicatorName={indicator.name}
+        iso3={countryIso3}
+        countryName={countryName}
+        params={searchParams.toString()}
+        className={btnCls}
+      />
       <button className={btnCls} onClick={handleOpenComparator}>
         Open in comparator
       </button>

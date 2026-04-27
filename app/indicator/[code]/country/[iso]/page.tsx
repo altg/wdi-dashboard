@@ -6,6 +6,7 @@ import {
   getCachedCountries,
   getCountryHistory,
   getPeerGroupSnapshot,
+  getPeerGroupHistory,
 } from "@/lib/wb/cache";
 import { resolveYearWindow } from "@/lib/year-range";
 import { getCountryEvents } from "@/lib/registry/events";
@@ -45,8 +46,17 @@ export default async function CountryDrilldownPage({
 
   const { selectedYear, compareYear } = await resolveYearWindow(code, sp);
 
-  const peerGroupId = PEER_GROUPS.some((p) => p.id === sp.peer) ? sp.peer : "mena";
-  const peerGroup = getPeerGroup(peerGroupId) ?? getPeerGroup("mena")!;
+  let peerGroup =
+    getPeerGroup(PEER_GROUPS.some((p) => p.id === sp.peer) ? sp.peer : "mena") ??
+    getPeerGroup("mena")!;
+  if (sp.peer === "custom") {
+    const memberIso3s = (sp.members ?? "").split(",").filter(Boolean);
+    peerGroup =
+      memberIso3s.length > 0
+        ? { id: "custom", label: "Custom group", type: "custom" as const, countryIso3s: memberIso3s }
+        : getPeerGroup("mena")!;
+  }
+  const peerGroupId = peerGroup.id;
 
   // Step 1: country metadata (fast — cached)
   const allCountries = await getCachedCountries();
@@ -88,6 +98,10 @@ export default async function CountryDrilldownPage({
     indicator.uncertaintyIndicators
       ? getCountryHistory(indicator.uncertaintyIndicators.lower, iso)
       : Promise.resolve(empty),
+    // Custom peer group trajectory (for benchmark line in TrajectoryChart)
+    peerGroup.id === "custom" && peerIso3s.length > 0
+      ? getPeerGroupHistory(code, "custom", peerIso3s, 2025)
+      : Promise.resolve(empty),
   ]);
 
   // Unpack driver pairs
@@ -98,6 +112,28 @@ export default async function CountryDrilldownPage({
     }));
   const upperObs: ObsArray = rest[driverCodes.length * 2] ?? empty;
   const lowerObs: ObsArray = rest[driverCodes.length * 2 + 1] ?? empty;
+  const rawCustomPeerObs: ObsArray = rest[driverCodes.length * 2 + 2] ?? empty;
+
+  // Compute year-by-year average across custom peer members
+  const peerGroupAvgObs: ObsArray = (() => {
+    if (!rawCustomPeerObs.length) return [];
+    const byYear = new Map<number, number[]>();
+    for (const o of rawCustomPeerObs) {
+      if (o.value !== null) {
+        if (!byYear.has(o.year)) byYear.set(o.year, []);
+        byYear.get(o.year)!.push(o.value as number);
+      }
+    }
+    return [...byYear.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([year, vals]) => ({
+        countryIso3: "__customPeerAvg__",
+        countryName: peerGroup.label,
+        indicatorCode: code,
+        year,
+        value: vals.reduce((s, v) => s + v, 0) / vals.length,
+      }));
+  })();
 
   // ── Derive obs arrays ────────────────────────────────────────────────────
   const countryObs = countryTraj;
@@ -173,6 +209,7 @@ export default async function CountryDrilldownPage({
   // ── Back URL ─────────────────────────────────────────────────────────────
   const backParams = new URLSearchParams();
   if (sp.peer) backParams.set("peer", sp.peer);
+  if (sp.members) backParams.set("members", sp.members);
   if (sp.year) backParams.set("year", sp.year);
   if (sp.compare) backParams.set("compare", sp.compare);
   const backHref = `/indicator/${code}${backParams.size ? `?${backParams}` : ""}`;
@@ -257,6 +294,8 @@ export default async function CountryDrilldownPage({
           defaultPeer1={defaultPeer1}
           defaultPeer2={defaultPeer2}
           events={events}
+          peerGroupAvgObs={peerGroupAvgObs.length > 0 ? peerGroupAvgObs : undefined}
+          peerGroupAvgLabel={peerGroupAvgObs.length > 0 ? peerGroup.label : undefined}
         />
       </Suspense>
 
