@@ -77,6 +77,36 @@ td, th, .num {
   border-radius: 3px;
 }
 
+/* ── Print / PDF export ───────────────────────────────────────────────────── */
+@media print {
+  /* Always render light regardless of dark-mode class */
+  html, html.dark {
+    --color-surface:   #FFFFFF;
+    --color-surface-2: #FAFAF8;
+    --color-surface-3: #F4F2EC;
+    --color-subtle:    rgba(0, 0, 0, 0.10);
+    --color-strong:    rgba(0, 0, 0, 0.20);
+    --color-primary:   #1A1A19;
+    --color-secondary: #5F5E5A;
+    --color-tertiary:  #888780;
+    background: #FFFFFF;
+  }
+  body {
+    background: #FFFFFF;
+    /* Preserve background colors in Chromium print */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Hide chrome that doesn't belong in a printout */
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  /* Ensure print-only elements are shown */
+  .print\:inline  { display: inline  !important; }
+  .print\:block   { display: block   !important; }
+}
+
 /* Shimmer animation for skeletons */
 @keyframes shimmer {
   0%   { background-position: -400px 0; }

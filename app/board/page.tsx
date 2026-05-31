@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getBoard, removePin, reorderPins, exportBoard, importBoard } from "@/lib/board";
 import type { BoardPin } from "@/lib/board";
 
@@ -9,6 +10,7 @@ export default function BoardPage() {
   const [pins, setPins] = useState<BoardPin[]>(() => getBoard());
   const [importError, setImportError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const dragSrc = useRef<number | null>(null);
 
@@ -74,6 +76,13 @@ export default function BoardPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => router.push("/board/print")}
+            disabled={pins.length === 0}
+            className="h-7 text-[11px] px-3 bg-surface border border-subtle rounded text-secondary hover:text-primary hover:bg-surface-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ⎙ Print / Export PDF
+          </button>
           <button
             onClick={handleExport}
             disabled={pins.length === 0}
