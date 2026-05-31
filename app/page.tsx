@@ -2,6 +2,7 @@ import Link from "next/link";
 import { INDICATORS, EXTENDED_INDICATORS } from "@/lib/registry/indicators";
 import type { Indicator } from "@/lib/registry/indicators";
 import { TOPIC_ORDER, TOPIC_COLORS } from "@/lib/topics";
+import { RecentsStrip } from "@/components/recents-strip";
 
 function groupByTopic(indicators: Indicator[]): Map<string, Indicator[]> {
   const map = new Map<string, Indicator[]>();
@@ -79,6 +80,8 @@ export default function CataloguePage() {
           <span className="text-tertiary">{totalExtended} additional WDI indicators available — expand any topic to see them.</span>
         </p>
       </div>
+
+      <RecentsStrip />
 
       {/* Topic sections */}
       <div className="flex flex-col gap-8">

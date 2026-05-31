@@ -7,6 +7,7 @@ import { sdgStatus } from "@/components/status-badge";
 import { CountryProfileHeader } from "@/components/country-profile-header";
 import { IndicatorTile } from "@/components/indicator-tile";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { TrackRecent } from "@/components/track-recent";
 import type { Observation } from "@/lib/wb/client";
 
 const POP_CODE = "SP.POP.TOTL";
@@ -89,6 +90,7 @@ export default async function CountryProfilePage({
 
   return (
     <div className="max-w-[1280px] mx-auto px-6 py-6">
+      <TrackRecent kind="country" iso={iso} />
       <Breadcrumb crumbs={[{ label: "Catalogue", href: "/" }, { label: countryMeta.name }]} />
 
       <CountryProfileHeader

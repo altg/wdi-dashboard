@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { getBoard } from "@/lib/board";
+import { CommandPalette } from "@/components/command-palette";
 
 type Props = {
   isLocal: boolean;
@@ -34,6 +35,7 @@ export function NavBar({ isLocal }: Props) {
   }
 
   return (
+    <>
     <nav className="border-b border-subtle bg-surface px-4 py-1.5 flex items-center gap-3">
       {/* Home link — hidden on the catalogue page itself */}
       {!isHome && (
@@ -79,6 +81,21 @@ export function NavBar({ isLocal }: Props) {
 
       <div className="flex-1" />
 
+      {/* Command palette trigger */}
+      <button
+        onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }))}
+        className="hidden sm:flex items-center gap-1.5 h-6 px-2 text-[11px] text-tertiary border border-subtle rounded bg-surface hover:bg-surface-2 hover:text-secondary transition-colors"
+        title="Open command palette (⌘K)"
+        aria-label="Open command palette"
+      >
+        <svg width="10" height="10" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" strokeWidth="1.6"/>
+          <path d="M13 13l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+        </svg>
+        <span>Search</span>
+        <kbd className="text-[9px] border border-subtle rounded px-0.5">⌘K</kbd>
+      </button>
+
       {/* Data source badge */}
       <span
         title={isLocal ? "Serving data from local DuckDB (wdidata/wdi.duckdb)" : "Fetching live data from World Bank API"}
@@ -118,5 +135,7 @@ export function NavBar({ isLocal }: Props) {
         )}
       </button>
     </nav>
+    <CommandPalette />
+  </>
   );
 }

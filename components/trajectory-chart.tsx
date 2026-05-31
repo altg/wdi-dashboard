@@ -96,6 +96,7 @@ export function TrajectoryChart({
   const [downloading, setDownloading] = useState(false);
   const [fromYear, setFromYear] = useState(MIN_YEAR);
   const [toYear, setToYear] = useState(MAX_YEAR);
+  const [logScale, setLogScale] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
   const isDark = useDarkMode();
 
@@ -189,6 +190,18 @@ export function TrajectoryChart({
         />
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <button
+            onClick={() => setLogScale((v) => !v)}
+            className={`h-6 text-[11px] px-2 border rounded transition-colors ${
+              logScale
+                ? "border-info/40 bg-info/5 text-info"
+                : "border-subtle bg-surface text-secondary hover:text-primary hover:bg-surface-2"
+            }`}
+            title="Toggle log scale on Y axis"
+            aria-pressed={logScale}
+          >
+            log
+          </button>
+          <button
             onClick={handleDownloadPNG}
             disabled={downloading}
             className="h-6 text-[11px] px-2 border border-subtle rounded bg-surface text-secondary hover:text-primary hover:bg-surface-2 transition-colors disabled:opacity-50"
@@ -242,10 +255,13 @@ export function TrajectoryChart({
             tickCount={8}
           />
           <YAxis
+            scale={logScale ? "log" : "linear"}
+            domain={logScale ? [0.1, "auto"] : undefined}
+            allowDataOverflow={logScale}
             tick={{ fontSize: 9, fill: isDark ? "#666460" : "#888780" }}
             axisLine={false}
             tickLine={false}
-            width={32}
+            width={40}
             tickFormatter={(v: number) =>
               formatNumber(v, { precision: indicator.precision < 1 ? 0 : 1, compact: true })
             }

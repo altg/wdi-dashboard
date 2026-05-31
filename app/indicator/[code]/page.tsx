@@ -19,6 +19,7 @@ import { IndexedTrendChart, type TrendSeries } from "@/components/indexed-trend-
 import { FilterBar } from "@/components/filter-bar";
 import { PeerTable } from "@/components/peer-table";
 import { RelatedIndicators } from "@/components/related-indicators";
+import { TrackRecent } from "@/components/track-recent";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const MIN_YEAR = 2000;
@@ -154,6 +155,7 @@ export default async function IndicatorPage({
 
   return (
     <div className="max-w-[1280px] mx-auto px-6 py-6">
+      <TrackRecent kind="indicator" code={code} />
       {/* Metadata strip */}
       <MetadataStrip
         indicator={indicator}

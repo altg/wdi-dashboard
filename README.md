@@ -45,10 +45,16 @@ For offline use or faster responses, load WDI data into DuckDB:
 - **Indicator deep-dive** — metadata strip, headline stat cards, SDG gap tracking
 - **Distribution histogram** — adaptive bin widths, SDG target reference line, color-coded by distance to target
 - **Regional trend chart** — indexed to 2000 baseline across MENA / South Asia / Sub-Saharan Africa / Latin America / High income
-- **Peer table** — sortable by any column, sparklines, CSV export, home-country highlight, full keyboard navigation (Tab + Arrow keys)
+- **Peer table** — sortable by any column, sparklines, CSV export, home-country highlight, full keyboard navigation (Tab + Arrow keys + Enter to drill in)
+- **Custom peer groups** — build any group from 6 starter templates (income bands, regions, custom), saved to localStorage
+- **Country profile** — header stats (population, GDP, life expectancy), SDG on-track summary, per-indicator tile grid
 - **Country drilldown** — trajectory vs regional and income group averages, driver indicators, policy event annotations
+- **Pinned board** — pin country × indicator snapshots, drag-to-reorder, JSON export/import
+- **Briefing PDF export** — `/board/print` renders a cover page + per-pin detail pages with trend charts; auto-opens the print dialog
+- **Command palette** — press `Cmd K` (or `Ctrl K`) from anywhere to search indicators and countries by name or code
+- **Recently viewed** — the home page shows a strip of recently visited indicators and country profiles
 - **Data quality signals** — coverage warnings, modelled estimate badges, uncertainty intervals
-- **Dark mode** — automatic via system preference
+- **Dark mode** — automatic via system preference, toggle in the nav bar
 
 ## Data source
 
